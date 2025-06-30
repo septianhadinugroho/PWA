@@ -1,14 +1,11 @@
-import {
-  defineConfig
-} from 'vite';
-import {
-  resolve
-} from 'path';
-import {
-  VitePWA
-} from 'vite-plugin-pwa';
+import { defineConfig } from 'vite';
+import { resolve } from 'path';
+import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // Root project adalah direktori utama, bukan 'src'
+  // root: './', // Menghapus ini agar Vite menggunakan root folder proyek secara default
+  
   server: {
     proxy: {
       '/api': {
@@ -16,56 +13,41 @@ export default defineConfig({
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, '/v1'),
         secure: false,
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq) => {
-            proxyReq.setHeader('Origin', 'https://story-api.dicoding.dev');
-            proxyReq.setHeader('Referer', 'https://story-api.dicoding.dev');
-          });
-          proxy.on('proxyRes', (proxyRes) => {
-            proxyRes.headers['Access-Control-Allow-Origin'] = '*';
-            proxyRes.headers['Access-Control-Allow-Methods'] = 'GET,POST,PUT,DELETE,OPTIONS';
-            proxyRes.headers['Access-Control-Allow-Headers'] = 'Content-Type,Authorization';
-          });
-        }
-      }
-    }
+      },
+    },
   },
-  root: './src',
-  publicDir: '../public',
+
+  // publicDir sekarang relatif terhadap root proyek
+  publicDir: 'public',
+
   build: {
-    outDir: '../dist',
+    // outDir sekarang relatif terhadap root proyek
+    outDir: 'dist',
     emptyOutDir: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'src/index.html')
-      }
+        // Path input harus relatif terhadap root proyek
+        main: resolve(__dirname, 'src/index.html'),
+      },
     },
-    manifest: true
+    manifest: true,
   },
+
   resolve: {
     alias: {
-      '@': resolve(__dirname, 'src')
-    }
+      '@': resolve(__dirname, 'src'),
+    },
   },
+  
   plugins: [
     VitePWA({
       registerType: 'autoUpdate',
+      injectRegister: 'auto',
       strategies: 'injectManifest',
-      injectManifest: {
-        // Path ke service worker dari root project
-        swSrc: './src/sw-backup.js',
-        swDest: 'sw.js',
-        globDirectory: resolve(__dirname, 'dist'),
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg,webp,woff2}'],
-        injectionPoint: 'self.__WB_MANIFEST',
-        dontCacheBustURLsMatching: /\.\w{8}\./
-      },
-      includeAssets: [
-        'favicon.ico',
-        'apple-touch-icon.png',
-        'icons/*.png',
-        'screenshots/*.png'
-      ],
+      // Konfigurasi injectManifest harus berada di dalam objek utama
+      srcDir: 'src',
+      filename: 'sw-backup.js', // Nama file service worker Anda di dalam srcDir
+      
       manifest: {
         name: "Story App - Berbagi Cerita dengan Lokasi",
         short_name: "StoryApp",
@@ -140,8 +122,8 @@ export default defineConfig({
       },
       devOptions: {
         enabled: true,
-        navigateFallback: '/index.html'
-      }
-    })
-  ]
+        type: 'module',
+      },
+    }),
+  ],
 });
